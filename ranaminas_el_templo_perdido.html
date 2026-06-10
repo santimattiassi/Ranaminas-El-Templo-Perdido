@@ -1,0 +1,1806 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RanaMinas: El Templo Perdido</title>
+    <!-- Tailwind CSS para el diseño de la interfaz de usuario -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Fuente Google Orbitron, Press Start 2P e Inter para ambiente retro y tecnológico -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Press+Start+2P&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <!-- Iconos Phosphor para detalles de interfaz -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d1117;
+        }
+        .retro-title {
+            font-family: 'Orbitron', sans-serif;
+            letter-spacing: 0.15em;
+        }
+        .pixel-font {
+            font-family: 'Press Start 2P', monospace;
+        }
+        /* Scrollbar personalizado para la tienda */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #111827;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #374151;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4B5563;
+        }
+    </style>
+</head>
+<body class="text-gray-100 min-h-screen flex flex-col justify-between overflow-x-hidden selection:bg-emerald-500 selection:text-black">
+
+    <!-- Modal de Selección de Nombre -->
+    <div id="name-modal" class="fixed inset-0 bg-gray-950/98 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+        <div class="bg-gray-900/90 border-2 border-emerald-500 p-8 rounded-2xl max-w-sm w-full shadow-2xl shadow-emerald-500/10 text-center flex flex-col gap-6 backdrop-blur-lg">
+            <div class="text-6xl animate-bounce">🐸</div>
+            <div>
+                <h2 class="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-green-400 to-yellow-300 retro-title uppercase mb-1">
+                    Rana Aventurera
+                </h2>
+                <p class="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">¿Cómo te llamás, pequeño explorador?</p>
+            </div>
+            
+            <div class="relative">
+                <input type="text" id="frog-name-input" value="Ranulfo" maxlength="15" class="w-full bg-gray-950 border-2 border-gray-800 focus:border-emerald-500 rounded-xl px-4 py-3 text-center text-md font-bold text-emerald-400 outline-none transition uppercase tracking-widest pixel-font" placeholder="Escribe aquí...">
+            </div>
+
+            <button onclick="confirmFrogName()" class="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-black font-black rounded-xl transition duration-200 uppercase tracking-widest text-xs shadow-lg shadow-emerald-500/20 hover:scale-[1.02] cursor-pointer">
+                ¡Entrar al Templo!
+            </button>
+        </div>
+    </div>
+
+    <!-- Encabezado de la Página -->
+    <header class="border-b border-emerald-900/30 bg-gray-900/80 backdrop-blur-md px-6 py-4 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-emerald-500/10 rounded-xl border border-emerald-500/30 text-emerald-400 animate-pulse">
+                    <i class="ph ph-sword text-3xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-green-400 to-yellow-300 retro-title uppercase">
+                        RanaMinas
+                    </h1>
+                    <p class="text-xs text-emerald-500/70 uppercase tracking-widest font-semibold">Buscaminas Táctico 2.5D</p>
+                </div>
+            </div>
+            
+            <!-- Marcadores del juego -->
+            <div class="flex flex-wrap gap-3 items-center justify-center">
+                <div class="bg-gray-950 px-3.5 py-2 rounded-xl border border-gray-800 flex items-center gap-2">
+                    <span class="text-[10px] text-gray-500 uppercase font-semibold font-bold">Ubicación</span>
+                    <span id="level-display" class="text-sm font-bold text-yellow-400 font-mono">Pantano - Lvl 1</span>
+                </div>
+                <div class="bg-gray-950 px-3.5 py-2 rounded-xl border border-gray-800 flex items-center gap-2">
+                    <span class="text-[10px] text-gray-500 uppercase font-semibold font-bold">Progreso</span>
+                    <span id="progress-display" class="text-sm font-mono font-bold text-emerald-400">0 / 0</span>
+                </div>
+                <div class="bg-gray-950 px-3.5 py-2 rounded-xl border border-gray-800 flex items-center gap-2">
+                    <i class="ph ph-coins text-yellow-500 text-lg"></i>
+                    <span id="gold-display" class="text-base font-bold text-yellow-400">0</span>
+                </div>
+                <button id="mute-btn" class="p-2 bg-gray-800 hover:bg-gray-700 rounded-xl text-gray-400 hover:text-white transition border border-gray-700/50">
+                    <i id="mute-icon" class="ph ph-speaker-high text-lg"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Contenido Principal -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-4 gap-6 items-stretch">
+        
+        <!-- Panel Izquierdo: Estado de la Ranita e Información -->
+        <div class="lg:col-span-1 flex flex-col gap-6">
+            <!-- Tarjeta del Héroe -->
+            <div class="bg-gray-900/60 p-5 rounded-2xl border border-gray-800 backdrop-blur flex flex-col gap-4 relative overflow-hidden">
+                <div class="absolute -right-10 -top-10 w-24 h-24 bg-emerald-500/5 rounded-full blur-2xl"></div>
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 bg-emerald-500/20 border border-emerald-500/40 rounded-xl flex items-center justify-center text-3xl">
+                        🐸
+                    </div>
+                    <div>
+                        <h2 class="font-bold text-lg text-emerald-300 flex items-center gap-1.5">
+                            <span id="frog-name-display">Ranulfo</span> <span class="text-xs bg-emerald-950 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/20 font-normal">Superviviente</span>
+                        </h2>
+                        <p id="frog-status-text" class="text-xs text-gray-400 font-semibold">Clic en el mapa para aparecer</p>
+                    </div>
+                </div>
+
+                <!-- Corazones dinámicos (Vidas) -->
+                <div class="bg-gray-950/80 p-3.5 rounded-xl border border-gray-800/80">
+                    <p class="text-[11px] text-gray-500 uppercase tracking-wider font-semibold mb-2">Resistencia del Héroe</p>
+                    <div id="hearts-container" class="flex items-center gap-1 text-2xl">
+                        <!-- Generados por JS -->
+                    </div>
+                </div>
+
+                <!-- Selector de Acción para pantallas táctiles -->
+                <div class="bg-gray-950/80 p-3 rounded-xl border border-gray-800">
+                    <p class="text-[11px] text-gray-500 uppercase tracking-wider font-semibold mb-2">Herramienta en Mano</p>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button id="tool-explore" class="py-2 px-3 rounded-lg border text-xs font-bold flex items-center justify-center gap-2 transition duration-150 bg-emerald-500 border-emerald-400 text-black shadow-lg shadow-emerald-500/10">
+                            🐸 Caminar
+                        </button>
+                        <button id="tool-flag" class="py-2 px-3 rounded-lg border text-xs font-bold flex items-center justify-center gap-2 transition duration-150 bg-gray-900 border-gray-800 text-gray-400 hover:bg-gray-850">
+                            🚩 Marcar
+                        </button>
+                    </div>
+                    <p class="text-[9px] text-gray-500 text-center mt-2">Podés usar <kbd class="px-1.5 py-0.5 bg-gray-850 border border-gray-750 rounded text-gray-400 font-mono">Espacio</kbd> para alternar modos o <strong class="text-gray-400">Clic Derecho</strong> para marcar directo.</p>
+                </div>
+            </div>
+
+            <!-- Panel de Instrucciones -->
+            <div class="bg-gray-900/60 p-5 rounded-2xl border border-gray-800 flex flex-col gap-3">
+                <h3 class="text-xs text-emerald-400 font-bold uppercase tracking-widest flex items-center gap-1.5">
+                    <i class="ph ph-compass-tool text-lg"></i> Reglas del Altar
+                </h3>
+                <ul class="text-xs text-gray-400 space-y-2.5">
+                    <li class="flex gap-2">
+                        <span class="text-emerald-500 font-bold">1.</span>
+                        <span>Hacé clic en **cualquier parte** para empezar. Tu primer paso siempre será seguro y revelará el terreno inicial.</span>
+                    </li>
+                    <li class="flex gap-2">
+                        <span class="text-emerald-500 font-bold">2.</span>
+                        <span>El objetivo es **descubrir todas las casillas seguras**. El nivel se supera cuando dejes solo las minas ocultas.</span>
+                    </li>
+                    <li class="flex gap-2">
+                        <span class="text-emerald-500 font-bold">3.</span>
+                        <span>Podés **volver a pisar** baldosas ya reveladas para transitar seguro hacia otras zonas del templo.</span>
+                    </li>
+                    <li class="flex gap-2">
+                        <span class="text-emerald-500 font-bold">4.</span>
+                        <span>Los números de proximidad **sólo se encienden** alrededor de la ranita. Las minas y corazones descubiertos son permanentes.</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Panel Central: Mapa Candy Crush + Tablero Canvas Principal -->
+        <div class="lg:col-span-2 flex flex-col gap-4">
+            
+            <!-- Caminito Candy Crush Dinámico -->
+            <div class="bg-gray-900/60 p-4 rounded-2xl border border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="flex items-center gap-2">
+                    <div class="p-1.5 bg-yellow-500/10 rounded-lg border border-yellow-500/30 text-yellow-500 text-sm">
+                        <i class="ph ph-map-trifold"></i>
+                    </div>
+                    <span id="biome-badge" class="text-xs font-bold px-3 py-1.5 rounded-full border uppercase tracking-widest transition-all">Pantano</span>
+                </div>
+                <!-- Nodos del Caminito: 4 Rectángulos y 1 Círculo del Boss -->
+                <div id="caminito-container" class="flex items-center gap-1.5 justify-center flex-wrap">
+                    <!-- Rellenado dinámicamente con JS -->
+                </div>
+            </div>
+
+            <div id="canvas-wrapper" class="relative bg-gray-950 rounded-2xl border-2 border-emerald-950 overflow-hidden shadow-2xl flex items-center justify-center flex-grow min-h-[480px]">
+                
+                <!-- Canvas de Juego -->
+                <canvas id="game-canvas" width="800" height="520" class="max-w-full h-auto cursor-pointer block"></canvas>
+
+                <!-- Pantalla Inicial / Overlay de Estados -->
+                <div id="game-overlay" class="absolute inset-0 bg-gray-950/90 backdrop-blur-sm flex flex-col items-center justify-center text-center p-6 hidden">
+                    <div id="overlay-content" class="max-w-md flex flex-col items-center gap-4">
+                        <!-- Icono e información dinámicos -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Barra informativa inferior -->
+            <div class="bg-gray-900/40 px-4 py-2.5 rounded-xl border border-gray-800 text-center text-xs text-gray-400">
+                <span>¿Sentís vibraciones en el suelo? Mirá los números. <strong class="text-emerald-400">Planeá tu ruta con cuidado.</strong></span>
+            </div>
+        </div>
+
+        <!-- Panel Derecho: Inventario y Tienda de Supervivencia -->
+        <div class="lg:col-span-1 flex flex-col gap-6">
+            <!-- Inventario Activo -->
+            <div class="bg-gray-900/60 p-5 rounded-2xl border border-gray-800 flex flex-col gap-3">
+                <h3 class="text-xs text-emerald-400 font-bold uppercase tracking-widest flex items-center gap-1.5">
+                    <i class="ph ph-bag-simple text-lg"></i> Inventario de Tácticas
+                </h3>
+                <div class="grid grid-cols-3 gap-2" id="inventory-grid">
+                    <!-- Slots de inventario dinámicos -->
+                </div>
+                <p class="text-[10px] text-gray-500 text-center italic mt-1">Hacé clic en un objeto comprado para activarlo y luego usalo en el mapa</p>
+            </div>
+
+            <!-- Tienda del Templo -->
+            <div class="bg-gray-900/60 p-5 rounded-2xl border border-gray-800 flex flex-col gap-3 flex-grow">
+                <h3 class="text-xs text-yellow-400 font-bold uppercase tracking-widest flex items-center gap-1.5">
+                    <i class="ph ph-storefront text-lg"></i> Tienda del Templo
+                </h3>
+                
+                <div class="flex flex-col gap-3 overflow-y-auto max-h-[250px] pr-1" id="shop-items">
+                    <!-- Objetos de la tienda generados por JS -->
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Pie de Página Oficial solicitado -->
+    <footer class="border-t border-gray-900 bg-gray-950/60 px-6 py-4 text-center text-xs text-gray-500">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="text-center sm:text-left flex flex-col gap-1">
+                <span>RanaMinas Roguelike 2.5D &copy; 2026. ¡La aventura te espera!</span>
+                <span class="text-[10px] text-gray-600 font-medium">Hecho por Carfas | Mail: <a href="mailto:carfasgaming@gmail.com" class="hover:text-emerald-500 transition font-mono">carfasgaming@gmail.com</a></span>
+            </div>
+            <div class="flex gap-4">
+                <a href="https://discord.gg/aT9CwGZHjw" target="_blank" rel="noopener noreferrer" class="hover:text-emerald-400 transition flex items-center gap-1">
+                    <i class="ph ph-discord-logo text-base"></i> Comunidad
+                </a>
+                <span class="text-emerald-500 font-bold">Version 1.0</span>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // SINTETIZADOR DE SONIDO RETRO 8-BITS
+        class AudioSynth {
+            constructor() {
+                this.ctx = null;
+                this.muted = false;
+            }
+            
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            }
+
+            playStep() {
+                if (this.muted) return;
+                this.init();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(140, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(320, this.ctx.currentTime + 0.12);
+                gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.12);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.12);
+            }
+
+            playExplosion() {
+                if (this.muted) return;
+                this.init();
+                const bufferSize = this.ctx.sampleRate * 0.4;
+                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+                const noise = this.ctx.createBufferSource();
+                noise.buffer = buffer;
+
+                const filter = this.ctx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(800, this.ctx.currentTime);
+                filter.frequency.exponentialRampToValueAtTime(10, this.ctx.currentTime + 0.35);
+
+                const gain = this.ctx.createGain();
+                gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.35);
+
+                noise.connect(filter);
+                filter.connect(gain);
+                gain.connect(this.ctx.destination);
+                noise.start();
+                noise.stop(this.ctx.currentTime + 0.4);
+            }
+
+            playHeart() {
+                if (this.muted) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                const notes = [261.63, 329.63, 392.00, 523.25]; // C4, E4, G4, C5
+                notes.forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+                    gain.gain.setValueAtTime(0.1, now + idx * 0.08);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.15);
+                    osc.start(now + idx * 0.08);
+                    osc.stop(now + idx * 0.08 + 0.15);
+                });
+            }
+
+            playCoin() {
+                if (this.muted) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(587.33, now); // D5
+                osc.frequency.setValueAtTime(880.00, now + 0.08); // A5
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                osc.start();
+                osc.stop(now + 0.25);
+            }
+
+            playWin() {
+                if (this.muted) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                const melody = [523.25, 659.25, 783.99, 1046.50];
+                melody.forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.1);
+                    gain.gain.setValueAtTime(0.08, now + idx * 0.1);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.1 + 0.2);
+                    osc.start(now + idx * 0.1);
+                    osc.stop(now + idx * 0.1 + 0.2);
+                });
+            }
+
+            playLose() {
+                if (this.muted) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                const melody = [392.00, 349.23, 311.13, 246.94];
+                melody.forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.15);
+                    gain.gain.setValueAtTime(0.08, now + idx * 0.15);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.15 + 0.3);
+                    osc.start(now + idx * 0.15);
+                    osc.stop(now + idx * 0.15 + 0.3);
+                });
+            }
+
+            playScan() {
+                if (this.muted) return;
+                this.init();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(800, this.ctx.currentTime);
+                osc.frequency.linearRampToValueAtTime(100, this.ctx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.35);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.35);
+            }
+        }
+
+        const sfx = new AudioSynth();
+
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Configuración de los 6 Biomas (Apuntando a la subcarpeta img/ local)
+        const BIOMES = [
+            {
+                name: 'Pantano',
+                unexplored: '#142c1d', depth: '#0a1a0e', active: '#10b981', activeDepth: '#064e3b', floor: '#0c120d', floorDepth: '#030504', highlight: '#34d399',
+                badgeStyle: 'bg-emerald-950/80 text-emerald-400 border-emerald-500/20', glowColor: 'rgba(16,185,129,0.4)', wrapperBorder: 'border-emerald-500/50',
+                imageSrc: 'img/pantano.png', overlayColor: 'rgba(5, 20, 10, 0.40)'
+            },
+            {
+                name: 'Bosque',
+                unexplored: '#273526', depth: '#141c13', active: '#22c55e', activeDepth: '#14532d', floor: '#0f140e', floorDepth: '#040604', highlight: '#4ade80',
+                badgeStyle: 'bg-green-950/80 text-green-400 border-green-500/20', glowColor: 'rgba(34,197,94,0.4)', wrapperBorder: 'border-green-500/50',
+                imageSrc: 'img/bosque.png', overlayColor: 'rgba(8, 20, 10, 0.42)'
+            },
+            {
+                name: 'Desierto',
+                unexplored: '#4d3319', depth: '#2b1c0e', active: '#ea580c', activeDepth: '#7c2d12', floor: '#1c1510', floorDepth: '#090604', highlight: '#f97316',
+                badgeStyle: 'bg-amber-950/80 text-amber-400 border-amber-500/20', glowColor: 'rgba(245,158,11,0.4)', wrapperBorder: 'border-amber-500/50',
+                imageSrc: 'img/desierto.png', overlayColor: 'rgba(25, 12, 4, 0.42)'
+            },
+            {
+                name: 'Ciudad',
+                unexplored: '#2e2a52', depth: '#1a1836', active: '#6366f1', activeDepth: '#3730a3', floor: '#0a0914', floorDepth: '#030308', highlight: '#818cf8',
+                badgeStyle: 'bg-indigo-950/80 text-indigo-400 border-indigo-500/20', glowColor: 'rgba(99,102,241,0.4)', wrapperBorder: 'border-indigo-500/50',
+                imageSrc: 'img/ciudad.png', overlayColor: 'rgba(10, 8, 25, 0.45)'
+            },
+            {
+                name: 'Nieve',
+                unexplored: '#1e305e', depth: '#0f1b3b', active: '#06b6d4', activeDepth: '#0891b2', floor: '#f1f5f9', floorDepth: '#cbd5e1', highlight: '#22d3ee',
+                badgeStyle: 'bg-sky-950/80 text-sky-400 border-sky-500/20', glowColor: 'rgba(56,189,248,0.4)', wrapperBorder: 'border-sky-500/50',
+                imageSrc: 'img/nieve.png', overlayColor: 'rgba(8, 16, 32, 0.42)'
+            },
+            {
+                name: 'Montaña',
+                unexplored: '#333333', depth: '#1c1c1c', active: '#ef4444', activeDepth: '#991b1b', floor: '#171717', floorDepth: '#0a0a0a', highlight: '#f87171',
+                badgeStyle: 'bg-red-950/80 text-rose-400 border-rose-500/20', glowColor: 'rgba(239,68,68,0.4)', wrapperBorder: 'border-rose-500/50',
+                imageSrc: 'img/montana.png', overlayColor: 'rgba(16, 10, 10, 0.42)'
+            }
+        ];
+
+        // Precarga de Imágenes
+        const biomeImages = {};
+        function preloadBiomeImages() {
+            BIOMES.forEach(b => {
+                const img = new Image();
+                img.src = b.imageSrc;
+                biomeImages[b.name] = img;
+            });
+        }
+        preloadBiomeImages();
+
+        // Parámetros de Estructura de la Grilla (Lados iguales para cubos perfectos)
+        const cols = 10;
+        const rows = 8;
+        const cellSize = 48;
+        const cellWidth = cellSize;
+        const cellHeight = cellSize;
+        const topHeight = cellSize;
+        const depthHeight = 10;
+
+        const startX = Math.floor((canvas.width - (cols * cellWidth)) / 2);
+        const startY = Math.floor((canvas.height - (rows * cellHeight)) / 2) + 12;
+
+        // Estado del Juego
+        let currentBiomeIndex = 0;
+        let currentLevel = 1; // 1 a 4: niveles normales. 5: Jefe Final
+        let gold = 0;
+        let lives = 2;
+        let extraHearts = 0;
+        let totalMines = 12;
+
+        let grid = [];
+        let particles = [];
+        let shakeDuration = 0;
+        let shakeIntensity = 0;
+        let activeTool = 'explore';
+
+        const frog = {
+            name: 'Ranulfo',
+            col: -1,
+            row: -1,
+            animX: 0,
+            animY: 0,
+            isSpawned: false,
+            path: [],
+            isMoving: false,
+            speed: 0.12,
+            state: 'idle',
+            direction: 'right'
+        };
+
+        let gameState = 'START';
+        let mouseHoveredCell = { col: -1, row: -1 };
+
+        // Inventario y Tienda
+        const shopInventory = [
+            { id: 'shield', name: 'Escudo de Faraday', desc: 'Te protege automáticamente de la próxima mina que pises.', cost: 6, icon: '🛡️', type: 'shield', quantity: 0 },
+            { id: 'scanner', name: 'Escáner de Pulso', desc: 'Revela un área de 3x3 de forma segura sin detonar nada.', cost: 5, icon: '📡', type: 'active', quantity: 0 },
+            { id: 'jump', name: 'Ancla de Salto', desc: 'Salta a cualquier casilla libre a un radio de 2 de distancia.', cost: 4, icon: '🪂', type: 'active', quantity: 0 }
+        ];
+        let selectedActiveItem = null;
+
+        // Función del Modal de Nombre Inicial
+        window.confirmFrogName = function() {
+            const nameInput = document.getElementById('frog-name-input');
+            let chosenName = nameInput.value.trim();
+            if (chosenName === '') {
+                chosenName = 'Ranulfo';
+            }
+            frog.name = chosenName;
+            document.getElementById('frog-name-display').innerText = chosenName;
+            
+            const modal = document.getElementById('name-modal');
+            modal.classList.add('hidden');
+            sfx.playHeart();
+        };
+
+        function initGrid() {
+            grid = [];
+            for (let c = 0; c < cols; c++) {
+                grid[c] = [];
+                for (let r = 0; r < rows; r++) {
+                    grid[c][r] = {
+                        isMine: false,
+                        isHeart: false,
+                        isCoin: false,
+                        neighborMines: 0,
+                        visited: false,
+                        flagged: false,
+                        exploded: false,
+                        coinCollected: false,
+                        heartCollected: false
+                    };
+                }
+            }
+        }
+
+        // Algoritmo de Inicio Seguro (Primer clic libre)
+        function generateBoard(firstClickedCol, firstClickedRow) {
+            initGrid();
+            
+            let placedMines = 0;
+            while (placedMines < totalMines) {
+                const randC = Math.floor(Math.random() * cols);
+                const randR = Math.floor(Math.random() * rows);
+                
+                const distanceToStart = Math.max(Math.abs(randC - firstClickedCol), Math.abs(randR - firstClickedRow));
+                
+                if (distanceToStart > 1 && !grid[randC][randR].isMine) {
+                    grid[randC][randR].isMine = true;
+                    placedMines++;
+                }
+            }
+
+            // Un Corazón por nivel en zona libre
+            let heartPlaced = false;
+            while (!heartPlaced) {
+                const randC = Math.floor(Math.random() * cols);
+                const randR = Math.floor(Math.random() * rows);
+                
+                if (!grid[randC][randR].isMine && Math.max(Math.abs(randC - firstClickedCol), Math.abs(randR - firstClickedRow)) > 1) {
+                    grid[randC][randR].isHeart = true;
+                    heartPlaced = true;
+                }
+            }
+
+            // Monedas de oro ocultas (3 a 6)
+            const totalCoinsToPlace = 3 + Math.floor(Math.random() * 4);
+            let coinsPlaced = 0;
+            while (coinsPlaced < totalCoinsToPlace) {
+                const randC = Math.floor(Math.random() * cols);
+                const randR = Math.floor(Math.random() * rows);
+                
+                if (!grid[randC][randR].isMine && !grid[randC][randR].isHeart && Math.max(Math.abs(randC - firstClickedCol), Math.abs(randR - firstClickedRow)) > 1) {
+                    grid[randC][randR].isCoin = true;
+                    coinsPlaced++;
+                }
+            }
+
+            // Números del Buscaminas
+            for (let c = 0; c < cols; c++) {
+                for (let r = 0; r < rows; r++) {
+                    if (grid[c][r].isMine) continue;
+                    let count = 0;
+                    for (let dc = -1; dc <= 1; dc++) {
+                        for (let dr = -1; dr <= 1; dr++) {
+                            const nc = c + dc;
+                            const nr = r + dr;
+                            if (nc >= 0 && nc < cols && nr >= 0 && nr < rows) {
+                                if (grid[nc][nr].isMine) count++;
+                            }
+                        }
+                    }
+                    grid[c][r].neighborMines = count;
+                }
+            }
+        }
+
+        // Trazador de Rutas BFS seguro sobre baldosas transitables
+        function calculatePath(startCol, startRow, targetCol, targetRow) {
+            if (startCol === targetCol && startRow === targetRow) return [];
+
+            const queue = [[{ col: startCol, row: startRow }]];
+            const visitedSet = new Set();
+            visitedSet.add(`${startCol},${startRow}`);
+
+            while (queue.length > 0) {
+                const currentPath = queue.shift();
+                const currentCell = currentPath[currentPath.length - 1];
+
+                if (currentCell.col === targetCol && currentCell.row === targetRow) {
+                    return currentPath;
+                }
+
+                const directions = [
+                    { dc: 0, dr: -1 }, // Norte
+                    { dc: 0, dr: 1 },  // Sur
+                    { dc: -1, dr: 0 }, // Oeste
+                    { dc: 1, dr: 0 }   // Este
+                ];
+
+                for (const d of directions) {
+                    const nextC = currentCell.col + d.dc;
+                    const nextR = currentCell.row + d.dr;
+
+                    if (nextC >= 0 && nextC < cols && nextR >= 0 && nextR < rows) {
+                        const key = `${nextC},${nextR}`;
+                        if (!visitedSet.has(key)) {
+                            const tile = grid[nextC][nextR];
+                            const isFinalStep = (nextC === targetCol && nextR === targetRow);
+
+                            // Tránsito permitido si es descubierta o el destino final inexplorado sin bandera
+                            if (tile.visited || (isFinalStep && !tile.flagged)) {
+                                visitedSet.add(key);
+                                queue.push([...currentPath, { col: nextC, row: nextR }]);
+                            }
+                        }
+                    }
+                }
+            }
+            return [];
+        }
+
+        function gridToScreen(col, row) {
+            return {
+                x: startX + col * cellWidth,
+                y: startY + row * cellHeight
+            };
+        }
+
+        function screenToGrid(mouseX, mouseY) {
+            for (let c = 0; c < cols; c++) {
+                for (let r = 0; r < rows; r++) {
+                    const screenPos = gridToScreen(c, r);
+                    const isSunken = grid[c][r].visited || grid[c][r].exploded;
+                    const depth = isSunken ? 0 : depthHeight;
+                    const topY = screenPos.y - depth;
+                    
+                    if (mouseX >= screenPos.x && mouseX <= screenPos.x + cellWidth &&
+                        mouseY >= topY && mouseY <= topY + topHeight) {
+                        return { col: c, row: r };
+                    }
+                }
+            }
+            return null;
+        }
+
+        function isWithinVision(col, row) {
+            if (!frog.isSpawned) return false;
+            return Math.abs(col - frog.col) <= 1 && Math.abs(row - frog.row) <= 1;
+        }
+
+        function getGameProgress() {
+            let safeTotal = 0;
+            let safeRevealed = 0;
+            for (let c = 0; c < cols; c++) {
+                for (let r = 0; r < rows; r++) {
+                    if (!grid[c][r].isMine) {
+                        safeTotal++;
+                        if (grid[c][r].visited) {
+                            safeRevealed++;
+                        }
+                    }
+                }
+            }
+            return { revealed: safeRevealed, total: safeTotal };
+        }
+
+        // Dibujo Adaptativo del Fondo
+        function drawBgCover(cContext, img, w, h) {
+            if (!img || img.naturalWidth === 0) return; // Validación anti-colgaduras para imágenes en carga
+            const imgRatio = img.naturalWidth / img.naturalHeight;
+            const canvasRatio = w / h;
+            let sx, sy, sWidth, sHeight;
+            if (imgRatio > canvasRatio) {
+                sHeight = img.naturalHeight;
+                sWidth = img.naturalHeight * canvasRatio;
+                sx = (img.naturalWidth - sWidth) / 2;
+                sy = 0;
+            } else {
+                sWidth = img.naturalWidth;
+                sHeight = img.naturalWidth / canvasRatio;
+                sx = 0;
+                sy = (img.naturalHeight - sHeight) / 2;
+            }
+            cContext.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, w, h);
+        }
+
+        function updateProgressUI() {
+            const progress = getGameProgress();
+            document.getElementById('progress-display').innerText = `${progress.revealed} / ${progress.total}`;
+        }
+
+        // Sistema de Partículas
+        class Particle {
+            constructor(x, y, color, type = 'spark') {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 6;
+                this.vy = (Math.random() - 0.5) * 6 - (type === 'heart' ? 2 : 0);
+                this.color = color;
+                this.life = 1.0;
+                this.decay = 0.02 + Math.random() * 0.02;
+                this.size = 2 + Math.random() * 4;
+                this.type = type;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                if (this.type === 'heart') {
+                    this.vy -= 0.05;
+                } else {
+                    this.vy += 0.15;
+                }
+                this.life -= this.decay;
+            }
+
+            draw(cContext) {
+                cContext.save();
+                cContext.globalAlpha = this.life;
+                cContext.fillStyle = this.color;
+                
+                if (this.type === 'heart') {
+                    cContext.font = `${this.size * 3}px Arial`;
+                    cContext.fillText('❤️', this.x, this.y);
+                } else if (this.type === 'star') {
+                    cContext.font = `${this.size * 2}px Arial`;
+                    cContext.fillText('⭐', this.x, this.y);
+                } else {
+                    cContext.beginPath();
+                    cContext.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    cContext.fill();
+                }
+                cContext.restore();
+            }
+        }
+
+        function spawnExplosionParticles(x, y) {
+            const colors = ['#f87171', '#f59e0b', '#ef4444', '#facc15', '#ffffff'];
+            for (let i = 0; i < 35; i++) {
+                particles.push(new Particle(x, y, colors[Math.floor(Math.random() * colors.length)], 'spark'));
+            }
+        }
+
+        function spawnHeartParticles(x, y) {
+            for (let i = 0; i < 15; i++) {
+                particles.push(new Particle(x, y, '#ef4444', 'heart'));
+            }
+        }
+
+        function spawnCoinParticles(x, y) {
+            for (let i = 0; i < 12; i++) {
+                particles.push(new Particle(x, y, '#fbbf24', 'star'));
+            }
+        }
+
+        function triggerScreenShake(duration, intensity) {
+            shakeDuration = duration;
+            shakeIntensity = intensity;
+        }
+
+        // Diseño Vectorial de Ranulfo
+        function drawFrogHero(cContext, x, y) {
+            cContext.save();
+            cContext.translate(x + cellWidth / 2, y + cellHeight / 2 - 8);
+
+            // Sombra inferior
+            cContext.fillStyle = 'rgba(0, 0, 0, 0.45)';
+            cContext.beginPath();
+            cContext.ellipse(0, 15, 15, 6, 0, 0, Math.PI * 2);
+            cContext.fill();
+
+            const animWave = frog.isMoving ? Math.sin(Date.now() * 0.015) : 0;
+            const tilt = animWave * 0.05;
+            cContext.rotate(tilt);
+
+            // Patas traseras
+            cContext.fillStyle = '#10b981';
+            cContext.beginPath();
+            cContext.ellipse(-11 + animWave * 2, 10, 7, 4, -0.3, 0, Math.PI * 2);
+            cContext.ellipse(11 - animWave * 2, 10, 7, 4, 0.3, 0, Math.PI * 2);
+            cContext.fill();
+
+            // Patitas amarillas
+            cContext.fillStyle = '#fbbf24';
+            cContext.beginPath();
+            cContext.ellipse(-13 + animWave * 2, 11, 3.5, 2, 0, 0, Math.PI * 2);
+            cContext.ellipse(13 - animWave * 2, 11, 3.5, 2, 0, 0, Math.PI * 2);
+            cContext.fill();
+
+            // Cuerpo
+            cContext.fillStyle = '#059669';
+            cContext.beginPath();
+            cContext.arc(0, 0, 11, 0, Math.PI * 2);
+            cContext.fill();
+
+            // Pancita
+            cContext.fillStyle = '#fef08a';
+            cContext.beginPath();
+            cContext.ellipse(0, 2, 7, 8, 0, 0, Math.PI * 2);
+            cContext.fill();
+
+            // Cabeza
+            cContext.fillStyle = '#10b981';
+            cContext.beginPath();
+            cContext.arc(0, -8, 9, 0, Math.PI * 2);
+            cContext.fill();
+
+            // Ojos saltones
+            cContext.fillStyle = '#10b981';
+            cContext.beginPath();
+            cContext.arc(-5, -15, 4.5, 0, Math.PI * 2);
+            cContext.arc(5, -15, 4.5, 0, Math.PI * 2);
+            cContext.fill();
+
+            cContext.fillStyle = '#ffffff';
+            cContext.beginPath();
+            cContext.arc(-5, -15, 3, 0, Math.PI * 2);
+            cContext.arc(5, -15, 3, 0, Math.PI * 2);
+            cContext.fill();
+
+            cContext.fillStyle = '#000000';
+            cContext.beginPath();
+            cContext.arc(-5, -15, 1.5, 0, Math.PI * 2);
+            cContext.arc(5, -15, 1.5, 0, Math.PI * 2);
+            cContext.fill();
+
+            // Vincha roja aventurera
+            cContext.fillStyle = '#ef4444';
+            cContext.beginPath();
+            cContext.rect(-8, -13, 16, 2.5);
+            cContext.fill();
+            cContext.beginPath();
+            cContext.moveTo(-7, -12);
+            cContext.lineTo(-13, -9 + Math.sin(Date.now() * 0.01) * 2);
+            cContext.lineTo(-11, -7);
+            cContext.closePath();
+            cContext.fill();
+
+            // Escudo activo (órbita azul parpadeante)
+            const activeShield = shopInventory.find(i => i.id === 'shield');
+            if (activeShield && activeShield.quantity > 0) {
+                cContext.strokeStyle = '#38bdf8';
+                cContext.lineWidth = 1.5;
+                cContext.shadowColor = '#0284c7';
+                cContext.shadowBlur = 6;
+                cContext.beginPath();
+                const shieldAngle = Date.now() * 0.003;
+                const sx = Math.cos(shieldAngle) * 18;
+                const sy = Math.sin(shieldAngle) * 18;
+                cContext.arc(sx, sy, 3, 0, Math.PI * 2);
+                cContext.fillStyle = '#e0f2fe';
+                cContext.fill();
+                cContext.stroke();
+            }
+
+            cContext.restore();
+        }
+
+        function drawExplodedMine(cContext, x, y) {
+            cContext.save();
+            cContext.fillStyle = '#27272a';
+            cContext.beginPath();
+            cContext.ellipse(x + cellWidth/2, y + topHeight/2, 16, 9, 0, 0, Math.PI * 2);
+            cContext.fill();
+
+            cContext.fillStyle = '#ef4444';
+            cContext.beginPath();
+            cContext.ellipse(x + cellWidth/2, y + topHeight/2, 10, 5, 0, 0, Math.PI * 2);
+            cContext.fill();
+            cContext.fillStyle = '#fbbf24';
+            cContext.beginPath();
+            cContext.ellipse(x + cellWidth/2, y + topHeight/2, 5, 2.5, 0, 0, Math.PI * 2);
+            cContext.fill();
+            cContext.restore();
+        }
+
+        // Bombas detectadas con radar: mina clásica de espinas
+        function drawUnexplodedMine(cContext, x, y) {
+            cContext.save();
+            cContext.translate(x + cellWidth / 2, y + topHeight / 2);
+            
+            // Picos de detonación
+            cContext.strokeStyle = '#3f3f46';
+            cContext.lineWidth = 3;
+            const spikes = 8;
+            for (let i = 0; i < spikes; i++) {
+                const angle = (i * Math.PI * 2) / spikes;
+                cContext.beginPath();
+                cContext.moveTo(0, 0);
+                cContext.lineTo(Math.cos(angle) * 14, Math.sin(angle) * 14);
+                cContext.stroke();
+            }
+
+            // Esfera central metálica
+            cContext.fillStyle = '#18181b';
+            cContext.strokeStyle = '#52525b';
+            cContext.lineWidth = 1.5;
+            cContext.beginPath();
+            cContext.arc(0, 0, 10, 0, Math.PI * 2);
+            cContext.fill();
+            cContext.stroke();
+
+            // LED rojo de peligro parpadeante
+            const redPulse = 0.5 + Math.sin(Date.now() * 0.01) * 0.5;
+            cContext.fillStyle = `rgba(239, 68, 68, ${redPulse})`;
+            cContext.shadowColor = '#ef4444';
+            cContext.shadowBlur = 4;
+            cContext.beginPath();
+            cContext.arc(-2.5, -2.5, 2.5, 0, Math.PI * 2);
+            cContext.fill();
+            
+            cContext.restore();
+        }
+
+        function drawHeartEntity(cContext, x, y) {
+            cContext.save();
+            const pulse = 1 + Math.sin(Date.now() / 150) * 0.1;
+            cContext.translate(x + cellWidth/2, y + topHeight/2);
+            cContext.scale(pulse, pulse);
+
+            cContext.fillStyle = '#ef4444';
+            cContext.beginPath();
+            cContext.moveTo(0, 3);
+            cContext.bezierCurveTo(-4, -2, -8, -2, -8, 3);
+            cContext.bezierCurveTo(-8, 7, -4, 9, 0, 13);
+            cContext.bezierCurveTo(4, 9, 8, 7, 8, 3);
+            cContext.bezierCurveTo(8, -2, 4, -2, 0, 3);
+            cContext.fill();
+            cContext.restore();
+        }
+
+        function drawCoinEntity(cContext, x, y) {
+            cContext.save();
+            const bounce = Math.sin(Date.now() / 100) * 2;
+            const spin = Math.sin(Date.now() / 80);
+            cContext.translate(x + cellWidth/2, y + topHeight/2 + bounce);
+            cContext.scale(spin, 1);
+
+            cContext.fillStyle = '#d97706';
+            cContext.beginPath();
+            cContext.arc(0, 0, 6, 0, Math.PI * 2);
+            cContext.fill();
+
+            cContext.fillStyle = '#fbbf24';
+            cContext.beginPath();
+            cContext.arc(0, 0, 5, 0, Math.PI * 2);
+            cContext.fill();
+            cContext.restore();
+        }
+
+        function drawFlagEntity(cContext, x, y) {
+            cContext.save();
+            cContext.translate(x + cellWidth/2, y + topHeight/2);
+            
+            cContext.strokeStyle = '#9ca3af';
+            cContext.lineWidth = 2;
+            cContext.beginPath();
+            cContext.moveTo(-3, 8);
+            cContext.lineTo(-3, -10);
+            cContext.stroke();
+
+            cContext.fillStyle = '#f87171';
+            cContext.beginPath();
+            cContext.moveTo(-3, -10);
+            cContext.lineTo(7, -6 + Math.sin(Date.now() * 0.01) * 1.5);
+            cContext.lineTo(-3, -2);
+            cContext.closePath();
+            cContext.fill();
+
+            cContext.fillStyle = '#facc15';
+            cContext.beginPath();
+            cContext.arc(-3, -10, 2, 0, Math.PI * 2);
+            cContext.fill();
+
+            cContext.restore();
+        }
+
+        function drawNumberIndicator(cContext, val, x, y) {
+            cContext.save();
+            cContext.font = 'bold 15px Orbitron, sans-serif';
+            cContext.textAlign = 'center';
+            cContext.textBaseline = 'middle';
+
+            const colors = {
+                1: '#60a5fa', 2: '#4ade80', 3: '#f87171', 4: '#c084fc',
+                5: '#fb923c', 6: '#22d3ee', 7: '#f472b6', 8: '#facc15'
+            };
+
+            cContext.fillStyle = colors[val] || '#ffffff';
+            cContext.shadowColor = colors[val] || '#000000';
+            cContext.shadowBlur = 3;
+            cContext.fillText(val, x + cellWidth/2, y + topHeight/2);
+            cContext.restore();
+        }
+
+        // RENDERIZADO DEL "CAMINITO" CANDY CRUSH (4 Rectángulos + 1 Círculo Rojo)
+        function updateLevelMapUI() {
+            const biome = BIOMES[currentBiomeIndex];
+            
+            // Badge del Bioma
+            const badge = document.getElementById('biome-badge');
+            badge.innerText = biome.name;
+            badge.className = `text-xs font-bold px-3 py-1.5 rounded-full border uppercase tracking-widest transition-all ${biome.badgeStyle}`;
+            
+            // Estilo del Contenedor del Canvas
+            const canvasWrapper = document.getElementById('canvas-wrapper');
+            canvasWrapper.className = `relative bg-gray-950 rounded-2xl border-2 overflow-hidden shadow-2xl flex items-center justify-center flex-grow min-h-[480px] transition-all duration-500 ${biome.wrapperBorder}`;
+            canvasWrapper.style.backgroundImage = `linear-gradient(rgba(10, 15, 25, 0.5), rgba(10, 15, 25, 0.85)), url('${biome.imageSrc}')`;
+            canvasWrapper.style.backgroundSize = 'cover';
+            canvasWrapper.style.backgroundPosition = 'center';
+            canvasWrapper.style.boxShadow = `0 10px 30px -10px ${biome.glowColor}`;
+
+            // Indicador de nivel en Header
+            document.getElementById('level-display').innerText = `${biome.name} - Lvl ${currentLevel === 5 ? 'Boss' : currentLevel}`;
+
+            // Dibujar nodos de caminito
+            const mapContainer = document.getElementById('caminito-container');
+            mapContainer.innerHTML = '';
+            
+            for (let i = 1; i <= 5; i++) {
+                const isBoss = (i === 5);
+                const isCompleted = (i < currentLevel);
+                const isActive = (i === currentLevel);
+                
+                const node = document.createElement('div');
+                
+                if (isBoss) {
+                    // Círculo del Boss Final
+                    node.className = `w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 border-2 ${
+                        isActive 
+                        ? 'bg-red-600 border-white text-white shadow-lg shadow-red-500/50 scale-110 animate-pulse' 
+                        : isCompleted 
+                        ? 'bg-red-950 border-red-500 text-red-400' 
+                        : 'bg-gray-950 border-gray-800 text-gray-600'
+                    }`;
+                    node.innerHTML = '<i class="ph ph-crown text-sm"></i>';
+                } else {
+                    // Rectángulos clásicos
+                    node.className = `w-14 h-8 rounded-lg flex flex-col items-center justify-center text-[10px] font-bold transition-all duration-300 border ${
+                        isActive 
+                        ? 'bg-emerald-500 border-white text-black shadow-lg shadow-emerald-500/40 scale-105' 
+                        : isCompleted 
+                        ? 'bg-emerald-950 border-emerald-500 text-emerald-400' 
+                        : 'bg-gray-950 border-gray-800 text-gray-500'
+                    }`;
+                    node.innerText = `NIVEL ${i}`;
+                }
+                
+                mapContainer.appendChild(node);
+                
+                // Líneas conectoras
+                if (i < 5) {
+                    const line = document.createElement('div');
+                    line.className = `h-0.5 w-6 sm:w-10 transition-all duration-300 ${
+                        i < currentLevel ? 'bg-emerald-500' : 'bg-gray-800'
+                    }`;
+                    mapContainer.appendChild(line);
+                }
+            }
+        }
+
+        // BUCLE DE RENDERIZADO DEL TABLERO
+        function renderLoop() {
+            ctx.save();
+            if (shakeDuration > 0) {
+                const shakeX = (Math.random() - 0.5) * shakeIntensity;
+                const shakeY = (Math.random() - 0.5) * shakeIntensity;
+                ctx.translate(shakeX, shakeY);
+                shakeDuration--;
+            }
+
+            const biome = BIOMES[currentBiomeIndex];
+            const bgImg = biomeImages[biome.name];
+
+            // Renderizar la hermosa ilustración de bioma de fondo (Con validación segura de tamaño real)
+            if (bgImg && bgImg.complete && bgImg.naturalWidth > 0) {
+                drawBgCover(ctx, bgImg, canvas.width, canvas.height);
+            } else {
+                ctx.fillStyle = '#0a0d14';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+
+            // Capa translúcida para garantizar que los bloques y números contrasten excelente
+            ctx.fillStyle = biome.overlayColor || 'rgba(10, 15, 25, 0.40)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Borde ornamental del altar místico
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
+
+            // Renderizar baldosas
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const tile = grid[c]?.[r];
+                    if (!tile) continue;
+
+                    const screenPos = gridToScreen(c, r);
+                    const isHovered = (mouseHoveredCell.col === c && mouseHoveredCell.row === r);
+                    const isVisible = isWithinVision(c, r);
+
+                    const isSunken = tile.visited || tile.exploded;
+                    const depth = isSunken ? 0 : depthHeight;
+
+                    let topColor = '#111827';
+                    let depthColor = '#030712';
+                    let borderHighlightColor = null;
+
+                    if (isVisible) {
+                        if (isSunken) {
+                            topColor = '#070a13';
+                            depthColor = '#010409';
+                        } else {
+                            if (isHovered) {
+                                topColor = '#10b981';
+                                depthColor = '#047857'; 
+                                borderHighlightColor = '#34d399';
+                            } else {
+                                topColor = '#059669';
+                                depthColor = '#064e3b';
+                                borderHighlightColor = '#10b981';
+                            }
+                        }
+                    } else {
+                        if (isSunken) {
+                            topColor = '#030712'; 
+                            depthColor = '#000000';
+                        } else {
+                            if (isHovered) {
+                                topColor = '#334155';
+                                depthColor = '#1e293b';
+                                borderHighlightColor = '#475569';
+                            } else {
+                                topColor = '#1e293b';
+                                depthColor = '#0f172a';
+                                borderHighlightColor = '#334155';
+                            }
+                        }
+                    }
+
+                    // A. Relieve 3D lateral (Con opacidad del 75% para que se vea el fondo místico detrás del mapa)
+                    ctx.save();
+                    ctx.globalAlpha = 0.75; 
+
+                    if (depth > 0) {
+                        ctx.fillStyle = depthColor;
+                        ctx.beginPath();
+                        ctx.rect(screenPos.x, screenPos.y - depth + topHeight, cellWidth, depth);
+                        ctx.fill();
+
+                        ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+                        ctx.beginPath();
+                        ctx.rect(screenPos.x, screenPos.y - depth + topHeight + (depth * 0.4), cellWidth, depth * 0.6);
+                        ctx.fill();
+
+                        ctx.strokeStyle = '#020617';
+                        ctx.lineWidth = 1;
+                        ctx.strokeRect(screenPos.x, screenPos.y - depth + topHeight, cellWidth, depth);
+                    }
+
+                    // B. Cara superior de la baldosa (Holográfica / Semi-transparente)
+                    ctx.fillStyle = topColor;
+                    ctx.beginPath();
+                    ctx.rect(screenPos.x, screenPos.y - depth, cellWidth, topHeight);
+                    ctx.fill();
+
+                    if (!isSunken) {
+                        ctx.strokeStyle = borderHighlightColor || 'rgba(255, 255, 255, 0.15)';
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.moveTo(screenPos.x, screenPos.y - depth + topHeight);
+                        ctx.lineTo(screenPos.x, screenPos.y - depth);
+                        ctx.lineTo(screenPos.x + cellWidth, screenPos.y - depth);
+                        ctx.stroke();
+
+                        ctx.strokeStyle = 'rgba(0, 0, 0, 0.65)';
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.moveTo(screenPos.x + cellWidth, screenPos.y - depth);
+                        ctx.lineTo(screenPos.x + cellWidth, screenPos.y - depth + topHeight);
+                        ctx.lineTo(screenPos.x, screenPos.y - depth + topHeight);
+                        ctx.stroke();
+                    } else {
+                        ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+                        ctx.lineWidth = 1.5;
+                        ctx.strokeRect(screenPos.x, screenPos.y - depth, cellWidth, topHeight);
+                        
+                        ctx.strokeStyle = 'rgba(0, 0, 0, 0.7)';
+                        ctx.lineWidth = 1.2;
+                        ctx.strokeRect(screenPos.x + 1, screenPos.y + 1, cellWidth - 2, topHeight - 2);
+                    }
+                    ctx.restore(); // Restauramos la opacidad total (1.0) para que las entidades e iconos se dibujen nítidos
+
+                    // C. Entidades conocidas PERSISTENTES
+                    if (tile.flagged && !isSunken) {
+                        drawFlagEntity(ctx, screenPos.x, screenPos.y - depth);
+                    } else {
+                        if (tile.exploded) {
+                            drawExplodedMine(ctx, screenPos.x, screenPos.y);
+                        } else if (tile.isMine && isSunken) {
+                            drawUnexplodedMine(ctx, screenPos.x, screenPos.y - depth);
+                        } else if (tile.isHeart && !tile.heartCollected && isSunken) {
+                            drawHeartEntity(ctx, screenPos.x, screenPos.y - depth);
+                        } else if (tile.isCoin && !tile.coinCollected && isSunken) {
+                            drawCoinEntity(ctx, screenPos.x, screenPos.y - depth);
+                        } else if (isSunken && isVisible) {
+                            // Los números respetan el faro y solo se ven si la rana está al lado
+                            if (tile.neighborMines > 0) {
+                                drawNumberIndicator(ctx, tile.neighborMines, screenPos.x, screenPos.y - depth);
+                            }
+                        }
+                    }
+
+                    if (isHovered && selectedActiveItem && !isSunken) {
+                        ctx.strokeStyle = '#38bdf8';
+                        ctx.lineWidth = 2;
+                        ctx.strokeRect(screenPos.x, screenPos.y - depth, cellWidth, topHeight);
+                    }
+                }
+            }
+
+            // Interpolación del movimiento suave de la ranita
+            if (frog.isSpawned) {
+                if (frog.isMoving && frog.path.length > 0) {
+                    const currentTarget = frog.path[0];
+                    const targetPos = gridToScreen(currentTarget.col, currentTarget.row);
+                    
+                    const dx = targetPos.x - frog.animX;
+                    const dy = targetPos.y - frog.animY;
+
+                    frog.direction = dx >= 0 ? 'right' : 'left';
+
+                    if (Math.abs(dx) < 2 && Math.abs(dy) < 2) {
+                        frog.animX = targetPos.x;
+                        frog.animY = targetPos.y;
+                        
+                        frog.col = currentTarget.col;
+                        frog.row = currentTarget.row;
+                        frog.path.shift();
+
+                        sfx.playStep();
+                        onFrogSteppedOnCell(frog.col, frog.row);
+
+                        if (frog.path.length === 0) {
+                            frog.isMoving = false;
+                            frog.state = 'idle';
+                        }
+                    } else {
+                        frog.animX += dx * frog.speed;
+                        frog.animY += dy * frog.speed;
+                    }
+                }
+
+                drawFrogHero(ctx, frog.animX, frog.animY);
+            }
+
+            // Actualizar partículas
+            for (let i = particles.length - 1; i >= 0; i--) {
+                particles[i].update();
+                particles[i].draw(ctx);
+                if (particles[i].life <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+
+            ctx.restore();
+            requestAnimationFrame(renderLoop);
+        }
+
+        // RESPUESTA AL PASO DE LA RANA
+        function onFrogSteppedOnCell(col, row) {
+            const tile = grid[col][row];
+            tile.visited = true;
+
+            updateProgressUI();
+
+            // 1. ¿Pisó mina activa?
+            if (tile.isMine && !tile.exploded) {
+                const activeShield = shopInventory.find(i => i.id === 'shield');
+                if (activeShield && activeShield.quantity > 0) {
+                    activeShield.quantity--;
+                    tile.exploded = true;
+                    triggerScreenShake(20, 8);
+                    spawnExplosionParticles(frog.animX + cellWidth/2, frog.animY + cellHeight/2);
+                    sfx.playExplosion();
+                    updateInventoryUI();
+                    
+                    frog.path = [];
+                    frog.isMoving = false;
+                    checkGameOverOrWin();
+                    return;
+                }
+
+                tile.exploded = true;
+                triggerScreenShake(30, 14);
+                spawnExplosionParticles(frog.animX + cellWidth/2, frog.animY + cellHeight/2);
+                sfx.playExplosion();
+
+                if (extraHearts > 0) {
+                    extraHearts--;
+                } else {
+                    lives--;
+                }
+                updateHeartsUI();
+
+                frog.path = [];
+                frog.isMoving = false;
+
+                if (lives <= 0) {
+                    triggerGameOver();
+                    return;
+                }
+            }
+
+            // 2. ¿Corazón?
+            if (tile.isHeart && !tile.heartCollected) {
+                tile.heartCollected = true;
+                if (lives < 2) {
+                    lives = 2;
+                } else {
+                    extraHearts++;
+                }
+                updateHeartsUI();
+                sfx.playHeart();
+                spawnHeartParticles(frog.animX + cellWidth/2, frog.animY + cellHeight/2);
+            }
+
+            // 3. ¿Moneda?
+            if (tile.isCoin && !tile.coinCollected) {
+                tile.coinCollected = true;
+                gold += 1;
+                document.getElementById('gold-display').innerText = gold;
+                sfx.playCoin();
+                spawnCoinParticles(frog.animX + cellWidth/2, frog.animY + cellHeight/2);
+                updateShopUI();
+            }
+
+            checkGameOverOrWin();
+        }
+
+        function checkGameOverOrWin() {
+            if (gameState !== 'PLAYING') return;
+
+            const progress = getGameProgress();
+            if (progress.revealed === progress.total) {
+                triggerWinLevel();
+            }
+        }
+
+        function triggerGameOver() {
+            gameState = 'GAMEOVER';
+            sfx.playLose();
+            frog.state = 'dead';
+            
+            const overlay = document.getElementById('game-overlay');
+            const content = document.getElementById('overlay-content');
+            overlay.classList.remove('hidden');
+            
+            content.innerHTML = `
+                <div class="text-red-500 text-6xl mb-2 animate-bounce">💀</div>
+                <h2 class="text-red-500 font-extrabold text-3xl pixel-font uppercase">Viaje Terminado</h2>
+                <p class="text-sm text-gray-400 my-2">¡${frog.name} cayó ante una mina ancestral en el Templo!</p>
+                <div class="flex gap-2 text-yellow-500 text-xs bg-gray-900 border border-gray-800 p-3 rounded-xl mt-2 w-full justify-center">
+                    <i class="ph ph-coins text-lg"></i> Oro Guardado: <span class="font-bold">${gold}</span>
+                </div>
+                <button onclick="restartGame()" class="mt-4 px-6 py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl font-bold transition duration-200 uppercase tracking-wider shadow-lg shadow-red-700/30 w-full">
+                    Volver a Intentar
+                </button>
+            `;
+        }
+
+        function triggerWinLevel() {
+            gameState = 'WIN';
+            sfx.playWin();
+            
+            const reward = 4 + currentLevel * 2;
+            gold += reward;
+            document.getElementById('gold-display').innerText = gold;
+
+            const overlay = document.getElementById('game-overlay');
+            const content = document.getElementById('overlay-content');
+            overlay.classList.remove('hidden');
+
+            const isBossWin = (currentLevel === 5);
+
+            content.innerHTML = `
+                <div class="text-yellow-400 text-5xl mb-2 animate-pulse">⭐ 👑 ⭐</div>
+                <h2 class="text-yellow-400 font-extrabold text-2xl pixel-font uppercase">
+                    ${isBossWin ? '¡BIOMA DESPEJADO!' : '¡TEMPLO DESPEJADO!'}
+                </h2>
+                <p class="text-xs text-gray-400 my-2">
+                    ${isBossWin ? '¡Derrotaste al Jefe Supremo de esta región!' : '¡Desvelaste cada secreto sin dejar una sola mina!'}
+                </p>
+                <div class="flex flex-col gap-1 w-full text-xs text-gray-400 bg-gray-900 border border-gray-800 p-3 rounded-xl my-2 text-left">
+                    <div class="flex justify-between"><span>Oro de Conquista:</span> <span class="text-yellow-400 font-bold">+${reward}</span></div>
+                    <div class="flex justify-between border-t border-gray-800 pt-1 mt-1"><span>Oro Total:</span> <span class="text-yellow-400 font-bold">${gold}</span></div>
+                </div>
+                <button onclick="advanceNextLevel()" class="mt-4 px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-black rounded-xl font-bold transition duration-200 uppercase tracking-wider shadow-lg shadow-emerald-500/30 w-full">
+                    ${isBossWin ? 'Viajar al Siguiente Bioma' : `Avanzar al Nivel ${currentLevel + 1}`}
+                </button>
+            `;
+        }
+
+        window.advanceNextLevel = function() {
+            if (currentLevel === 5) {
+                // Avanzamos al siguiente bioma, reiniciamos nivel a 1
+                currentBiomeIndex = (currentBiomeIndex + 1) % BIOMES.length;
+                currentLevel = 1;
+            } else {
+                currentLevel++;
+            }
+            
+            // Más minas según dificultad. Nivel 5 (Boss) tiene 18 fijas.
+            if (currentLevel === 5) {
+                totalMines = 18;
+            } else {
+                totalMines = 11 + currentLevel;
+            }
+
+            frog.isSpawned = false;
+            frog.col = -1;
+            frog.row = -1;
+            frog.path = [];
+            frog.isMoving = false;
+            frog.state = 'idle';
+
+            initGrid();
+            gameState = 'START';
+
+            document.getElementById('game-overlay').classList.add('hidden');
+            document.getElementById('frog-status-text').innerText = "Clic donde quieras aparecer";
+            updateProgressUI();
+            updateShopUI();
+            updateLevelMapUI();
+        };
+
+        window.restartGame = function() {
+            currentBiomeIndex = 0;
+            currentLevel = 1;
+            gold = 0;
+            lives = 2;
+            extraHearts = 0;
+            totalMines = 12;
+            document.getElementById('gold-display').innerText = gold;
+
+            shopInventory.forEach(item => item.quantity = 0);
+            selectedActiveItem = null;
+
+            frog.isSpawned = false;
+            frog.col = -1;
+            frog.row = -1;
+            frog.path = [];
+            frog.isMoving = false;
+            frog.state = 'idle';
+
+            initGrid();
+            gameState = 'START';
+
+            document.getElementById('game-overlay').classList.add('hidden');
+            document.getElementById('frog-status-text').innerText = "Clic donde quieras aparecer";
+            updateHeartsUI();
+            updateInventoryUI();
+            updateShopUI();
+            updateProgressUI();
+            updateLevelMapUI();
+        };
+
+        function updateHeartsUI() {
+            const container = document.getElementById('hearts-container');
+            container.innerHTML = '';
+
+            for (let i = 1; i <= 2; i++) {
+                if (i <= lives) {
+                    container.innerHTML += `<span class="text-red-500 filter drop-shadow-[0_2px_4px_rgba(239,68,68,0.4)] animate-pulse">❤️</span>`;
+                } else {
+                    container.innerHTML += `<span class="text-gray-700 opacity-60">🤍</span>`;
+                }
+            }
+
+            if (extraHearts > 0) {
+                container.innerHTML += `
+                    <span class="text-xs font-bold text-emerald-400 flex items-center gap-1 ml-2 bg-emerald-950 px-2 py-0.5 rounded-lg border border-emerald-500/20">
+                        + (❤️ ${extraHearts})
+                    </span>
+                `;
+            }
+        }
+
+        function updateInventoryUI() {
+            const gridContainer = document.getElementById('inventory-grid');
+            gridContainer.innerHTML = '';
+
+            for (let i = 0; i < 3; i++) {
+                const item = shopInventory[i];
+                const isSelected = selectedActiveItem && selectedActiveItem.id === item.id;
+                
+                if (item && item.quantity > 0) {
+                    gridContainer.innerHTML += `
+                        <button onclick="selectInventoryItem('${item.id}')" class="group relative aspect-square bg-gray-950 hover:bg-gray-800 rounded-xl border ${isSelected ? 'border-sky-400 shadow-lg shadow-sky-500/20' : 'border-gray-800 hover:border-gray-700'} flex flex-col items-center justify-center p-1 transition cursor-pointer">
+                            <span class="text-2xl">${item.icon}</span>
+                            <span class="text-[9px] text-gray-400 group-hover:text-white mt-1">x${item.quantity}</span>
+                            <span class="pointer-events-none absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-gray-950 text-[10px] text-gray-300 px-2.5 py-1 rounded-md border border-gray-800 w-28 text-center opacity-0 group-hover:opacity-100 transition duration-150 shadow-xl z-20">
+                                ${item.name}
+                            </span>
+                        </button>
+                    `;
+                } else {
+                    gridContainer.innerHTML += `
+                        <div class="aspect-square bg-gray-950/40 rounded-xl border border-dashed border-gray-800/80 flex items-center justify-center text-xs text-gray-600">
+                            Vacío
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        function updateShopUI() {
+            const shopContainer = document.getElementById('shop-items');
+            shopContainer.innerHTML = '';
+
+            shopInventory.forEach(item => {
+                const canAfford = gold >= item.cost;
+                shopContainer.innerHTML += `
+                    <div class="bg-gray-950/80 p-3 rounded-xl border border-gray-800 flex justify-between items-center gap-2 group hover:border-gray-700/80 transition">
+                        <div class="flex gap-2.5 items-center">
+                            <span class="text-2xl bg-gray-900 p-1.5 rounded-lg border border-gray-800 group-hover:scale-105 transition duration-200">${item.icon}</span>
+                            <div class="text-left">
+                                <h4 class="text-xs font-bold text-gray-200 group-hover:text-emerald-400 transition">${item.name}</h4>
+                                <p class="text-[10px] text-gray-400 mt-0.5 max-w-[150px] leading-tight">${item.desc}</p>
+                            </div>
+                        </div>
+                        <button onclick="buyShopItem('${item.id}')" ${!canAfford ? 'disabled' : ''} class="px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 ${canAfford ? 'bg-yellow-500 text-black hover:bg-yellow-400 cursor-pointer' : 'bg-gray-800/50 text-gray-500 cursor-not-allowed'} transition">
+                            <i class="ph ph-coins"></i> ${item.cost}
+                        </button>
+                    </div>
+                `;
+            });
+        }
+
+        window.buyShopItem = function(itemId) {
+            const item = shopInventory.find(i => i.id === itemId);
+            if (!item || gold < item.cost) return;
+
+            gold -= item.cost;
+            item.quantity++;
+
+            document.getElementById('gold-display').innerText = gold;
+            sfx.playCoin();
+            updateShopUI();
+            updateInventoryUI();
+        };
+
+        window.selectInventoryItem = function(itemId) {
+            const item = shopInventory.find(i => i.id === itemId);
+            if (!item || item.quantity <= 0) return;
+
+            if (item.type === 'shield') return;
+
+            if (selectedActiveItem && selectedActiveItem.id === itemId) {
+                selectedActiveItem = null;
+            } else {
+                selectedActiveItem = item;
+                sfx.playStep();
+            }
+            updateInventoryUI();
+        };
+
+        // Uso del radar: Revela 3x3 y mantiene minas estables sin explotar
+        function useScannerItem(c, r) {
+            if (!selectedActiveItem || selectedActiveItem.id !== 'scanner') return;
+
+            selectedActiveItem.quantity--;
+            selectedActiveItem = null;
+
+            sfx.playScan();
+            triggerScreenShake(8, 3);
+
+            for (let dc = -1; dc <= 1; dc++) {
+                for (let dr = -1; dr <= 1; dr++) {
+                    const nc = c + dc;
+                    const nr = r + dr;
+                    if (nc >= 0 && nc < cols && nr >= 0 && nr < rows) {
+                        grid[nc][nr].visited = true;
+                        grid[nc][nr].flagged = false;
+                        
+                        if (grid[nc][nr].isCoin && !grid[nc][nr].coinCollected) {
+                            grid[nc][nr].coinCollected = true;
+                            gold += 1;
+                            document.getElementById('gold-display').innerText = gold;
+                        }
+                        if (grid[nc][nr].isHeart && !grid[nc][nr].heartCollected) {
+                            grid[nc][nr].heartCollected = true;
+                            if (lives < 2) lives = 2; else extraHearts++;
+                            updateHeartsUI();
+                        }
+                    }
+                }
+            }
+
+            updateInventoryUI();
+            updateShopUI();
+            updateProgressUI();
+            checkGameOverOrWin();
+        }
+
+        function useJumpItem(c, r) {
+            if (!selectedActiveItem || selectedActiveItem.id !== 'jump') return;
+
+            const distance = Math.max(Math.abs(frog.col - c), Math.abs(frog.row - r));
+            if (distance > 2 || grid[c][r].flagged) return;
+
+            selectedActiveItem.quantity--;
+            selectedActiveItem = null;
+
+            sfx.playScan();
+            spawnCoinParticles(frog.animX + cellWidth/2, frog.animY + cellHeight/2);
+
+            frog.col = c;
+            frog.row = r;
+            const targetScreenPos = gridToScreen(c, r);
+            frog.animX = targetScreenPos.x;
+            frog.animY = targetScreenPos.y;
+            frog.path = [];
+            frog.isMoving = false;
+
+            onFrogSteppedOnCell(c, r);
+
+            updateInventoryUI();
+            updateShopUI();
+        }
+
+        function setTool(tool) {
+            activeTool = tool;
+            const btnExplore = document.getElementById('tool-explore');
+            const btnFlag = document.getElementById('tool-flag');
+
+            if (tool === 'explore') {
+                btnExplore.className = "py-2 px-3 rounded-lg border text-xs font-bold flex items-center justify-center gap-2 transition duration-150 bg-emerald-500 border-emerald-400 text-black shadow-lg shadow-emerald-500/10";
+                btnFlag.className = "py-2 px-3 rounded-lg border text-xs font-bold flex items-center justify-center gap-2 transition duration-150 bg-gray-900 border-gray-800 text-gray-400 hover:bg-gray-850";
+            } else {
+                btnFlag.className = "py-2 px-3 rounded-lg border text-xs font-bold flex items-center justify-center gap-2 transition duration-150 bg-red-500 border-red-400 text-black shadow-lg shadow-red-500/10";
+                btnExplore.className = "py-2 px-3 rounded-lg border text-xs font-bold flex items-center justify-center gap-2 transition duration-150 bg-gray-900 border-gray-800 text-gray-400 hover:bg-gray-850";
+            }
+        }
+
+        document.getElementById('tool-explore').addEventListener('click', () => setTool('explore'));
+        document.getElementById('tool-flag').addEventListener('click', () => setTool('flag'));
+
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                setTool(activeTool === 'explore' ? 'flag' : 'explore');
+            }
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const mouseX = (e.clientX - rect.left) * scaleX;
+            const mouseY = (e.clientY - rect.top) * scaleY;
+
+            const hovered = screenToGrid(mouseX, mouseY);
+            if (hovered) {
+                mouseHoveredCell = hovered;
+            } else {
+                mouseHoveredCell = { col: -1, row: -1 };
+            }
+        });
+
+        canvas.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const mouseX = (e.clientX - rect.left) * scaleX;
+            const mouseY = (e.clientY - rect.top) * scaleY;
+
+            const clicked = screenToGrid(mouseX, mouseY);
+            if (!clicked || gameState !== 'PLAYING') return;
+
+            toggleFlag(clicked.col, clicked.row);
+        });
+
+        function toggleFlag(col, row) {
+            const tile = grid[col][row];
+            if (!tile.visited) {
+                tile.flagged = !tile.flagged;
+                sfx.playStep();
+            }
+        }
+
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const mouseX = (e.clientX - rect.left) * scaleX;
+            const mouseY = (e.clientY - rect.top) * scaleY;
+
+            const clicked = screenToGrid(mouseX, mouseY);
+            if (!clicked) return;
+
+            // 1. Uso de items activos
+            if (selectedActiveItem) {
+                if (selectedActiveItem.id === 'scanner') {
+                    useScannerItem(clicked.col, clicked.row);
+                    return;
+                }
+                if (selectedActiveItem.id === 'jump') {
+                    useJumpItem(clicked.col, clicked.row);
+                    return;
+                }
+            }
+
+            // 2. Modo Bandera activo
+            if (activeTool === 'flag' && gameState === 'PLAYING') {
+                toggleFlag(clicked.col, clicked.row);
+                return;
+            }
+
+            if (grid[clicked.col][clicked.row].flagged) return;
+
+            // 3. Primer paso seguro
+            if (gameState === 'START') {
+                gameState = 'PLAYING';
+                generateBoard(clicked.col, clicked.row);
+
+                frog.isSpawned = true;
+                frog.col = clicked.col;
+                frog.row = clicked.row;
+                const pos = gridToScreen(clicked.col, clicked.row);
+                frog.animX = pos.x;
+                frog.animY = pos.y;
+                frog.isMoving = false;
+
+                document.getElementById('frog-status-text').innerText = "Viajando por el templo...";
+
+                onFrogSteppedOnCell(clicked.col, clicked.row);
+                return;
+            }
+
+            // 4. Navegación clásica
+            if (gameState === 'PLAYING' && !frog.isMoving) {
+                const path = calculatePath(frog.col, frog.row, clicked.col, clicked.row);
+                if (path.length > 0) {
+                    frog.path = path;
+                    frog.isMoving = true;
+                    frog.state = 'moving';
+                }
+            }
+        });
+
+        const muteBtn = document.getElementById('mute-btn');
+        const muteIcon = document.getElementById('mute-icon');
+        muteBtn.addEventListener('click', () => {
+            sfx.muted = !sfx.muted;
+            if (sfx.muted) {
+                muteIcon.className = "ph ph-speaker-slash text-lg text-red-400 animate-pulse";
+            } else {
+                muteIcon.className = "ph ph-speaker-high text-lg";
+            }
+        });
+
+        // Iniciador Global Seguro (Evita que window.onload falle si el sandbox ya inició el DOM)
+        function startEverything() {
+            initGrid();
+            updateHeartsUI();
+            updateInventoryUI();
+            updateShopUI();
+            updateProgressUI();
+            updateLevelMapUI();
+            
+            renderLoop();
+        }
+
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+            startEverything();
+        } else {
+            window.onload = startEverything;
+        }
+    </script>
+</body>
+</html>

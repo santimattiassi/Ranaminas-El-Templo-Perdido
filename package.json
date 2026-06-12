@@ -8,6 +8,10 @@
     "email": "carfasgames@gmail.com"
   },
   "homepage": "https://github.com/carfas/ranaminas",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/santimattiassi/Ranaminas-El-Templo-Perdido.git"
+  },
   "license": "MIT",
   "scripts": {
     "start": "electron . --no-sandbox",

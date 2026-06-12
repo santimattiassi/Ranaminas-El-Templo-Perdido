@@ -13,6 +13,10 @@ export const BIOMES = [
 export const INITIAL_INVENTORY = [
     { id: 'shield', name: 'Escudo de Faraday', desc: 'Te protege de la próxima mina.', cost: 6, icon: '🛡️', type: 'shield', quantity: 0 },
     { id: 'scanner', name: 'Escáner de Pulso', desc: 'Revela 3x3 de forma segura.', cost: 5, icon: '📡', type: 'active', quantity: 0 },
-    { id: 'jump', name: 'Ancla de Salto', desc: 'Salta a un radio de 2 de distancia.', cost: 4, icon: '🪂', type: 'active', quantity: 0 }
+    { id: 'jump', name: 'Ancla de Salto', desc: 'Salta a un radio de 2 de distancia.', cost: 4, icon: '🪂', type: 'active', quantity: 0 },
+    { id: 'potion', name: 'Poción de Vida', desc: 'Restaura 1 corazón de vida al instante.', cost: 10, icon: '🧪', type: 'use', quantity: 0 },
+    { id: 'boots', name: 'Botas de Velocidad', desc: 'Aumenta tu velocidad en este nivel.', cost: 5, icon: '🥾', type: 'active', quantity: 0 },
+    { id: 'magnifier', name: 'Lupa de Vidente', desc: 'Encuentra y marca 1 mina oculta.', cost: 6, icon: '🔍', type: 'active', quantity: 0 },
+    { id: 'elixir', name: 'Elixir de Inmunidad', desc: 'Inmune a ataques de jefes por 6s.', cost: 8, icon: '✨', type: 'active', quantity: 0 }
 ];
 export const GRID_CONFIG = { cols: 10, rows: 8, cellSize: 48, depthHeight: 10 };

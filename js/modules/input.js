@@ -6,6 +6,7 @@ import * as game from './game.js';
 import * as audio from './audio.js';
 import * as renderer from './renderer.js';
 import * as ui from './ui.js';
+import { StoneProjectile } from './entities.js';
 
 export let mouseHoveredCell = { col: -1, row: -1 };
 export let lastMouseX = 0;
@@ -21,6 +22,26 @@ export function initInput(canvas) {
         lastMouseX = mouseX; lastMouseY = mouseY;
         const hovered = renderer.screenToGrid(mouseX, mouseY);
         if (hovered) mouseHoveredCell = hovered; else mouseHoveredCell = { col: -1, row: -1 };
+
+        // Efecto 3D Tilt Basculante en el wrapper
+        const wrapper = document.getElementById('canvas-wrapper');
+        if (wrapper) {
+            const normX = (e.clientX - rect.left) / rect.width - 0.5;
+            const normY = (e.clientY - rect.top) / rect.height - 0.5;
+            const tiltX = -normY * 10;
+            const tiltY = normX * 10;
+            wrapper.style.transform = `perspective(1200px) rotateX(${tiltX}deg) rotateY(${tiltY}deg)`;
+            wrapper.style.transition = 'transform 0.08s ease-out';
+        }
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+        const wrapper = document.getElementById('canvas-wrapper');
+        if (wrapper) {
+            wrapper.style.transform = 'perspective(1200px) rotateX(0deg) rotateY(0deg)';
+            wrapper.style.transition = 'transform 0.4s ease-out';
+        }
+        mouseHoveredCell = { col: -1, row: -1 };
     });
 
     canvas.addEventListener('contextmenu', (e) => {
@@ -57,7 +78,7 @@ export function initInput(canvas) {
                             game.grid[nc][nr].visited = true; game.grid[nc][nr].flagged = false;
                             if (game.grid[nc][nr].isCoin && !game.grid[nc][nr].coinCollected) { game.grid[nc][nr].coinCollected = true; game.state.gold += 1; ui.updateGoldUI(); }
                             if (game.grid[nc][nr].isHeart && !game.grid[nc][nr].heartCollected) { game.grid[nc][nr].heartCollected = true; if (game.state.lives < 2) game.state.lives = 2; else game.state.extraHearts++; ui.updateHeartsUI(); }
-                            if (game.grid[nc][nr].isStone && !game.grid[nc][nr].stoneActivated) { game.grid[nc][nr].stoneActivated = true; const sPos = renderer.gridToScreen(nc, nr); renderer.bossProjectiles.push(new renderer.StoneProjectile(sPos.x + 24, sPos.y + 24 - game.grid[nc][nr].animDepth, 720, 220)); audio.sfx.playStoneThrow(); }
+                            if (game.grid[nc][nr].isStone && !game.grid[nc][nr].stoneActivated) { game.grid[nc][nr].stoneActivated = true; const sPos = renderer.gridToScreen(nc, nr); game.state.bossProjectiles.push(new StoneProjectile(sPos.x + 24, sPos.y + 24 - game.grid[nc][nr].animDepth, 720, 220)); audio.sfx.playStoneThrow(); }
                         }
                     }
                 }
@@ -88,7 +109,16 @@ export function initInput(canvas) {
         }
 
         if (game.state.gameState === 'PLAYING' && !game.frog.isMoving) {
-            const path = game.calculatePath(game.frog.col, game.frog.row, clicked.col, clicked.row);
+            if (Date.now() < game.state.rootedUntil) {
+                ui.setStatusText("¡Estás enredado! No puedes moverte.");
+                return;
+            }
+            let path = [];
+            if (Date.now() < game.state.frozenUntil) {
+                path = game.getSlidePath(game.frog.col, game.frog.row, clicked.col, clicked.row);
+            } else {
+                path = game.calculatePath(game.frog.col, game.frog.row, clicked.col, clicked.row);
+            }
             if (path.length > 0) { game.frog.path = path; game.frog.isMoving = true; game.frog.state = 'moving'; }
         }
     });

@@ -12,7 +12,7 @@ export const DOM = {
     heartsContainer: null, inventoryGrid: null, shopItems: null, gameOverlay: null,
     overlayContent: null, frogStatusText: null, biomeBadge: null, canvasWrapper: null,
     caminitoContainer: null, frogNameDisplay: null, frogNameInput: null, nameModal: null,
-    toolExplore: null, toolFlag: null
+    toolExplore: null, toolFlag: null, scoreDisplay: null
 };
 
 export function initDOM() {
@@ -34,6 +34,7 @@ export function initDOM() {
     DOM.nameModal = document.getElementById('name-modal');
     DOM.toolExplore = document.getElementById('tool-explore');
     DOM.toolFlag = document.getElementById('tool-flag');
+    DOM.scoreDisplay = document.getElementById('score-display');
 
     DOM.toolExplore.addEventListener('click', () => setTool('explore'));
     DOM.toolFlag.addEventListener('click', () => setTool('flag'));
@@ -65,6 +66,10 @@ export function updateGoldUI() {
     if(DOM.goldDisplay) DOM.goldDisplay.innerText = game.state.gold;
 }
 
+export function updateScoreUI() {
+    if(DOM.scoreDisplay) DOM.scoreDisplay.innerText = game.state.totalScore;
+}
+
 export function updateHeartsUI() {
     if(!DOM.heartsContainer) return;
     DOM.heartsContainer.innerHTML = '';
@@ -83,21 +88,19 @@ export function updateHeartsUI() {
 export function updateInventoryUI() {
     if(!DOM.inventoryGrid) return;
     DOM.inventoryGrid.innerHTML = '';
-    for (let i = 0; i < 3; i++) {
-        const item = game.state.shopInventory[i];
+    const ownedItems = game.state.shopInventory.filter(item => item.quantity > 0);
+    ownedItems.forEach(item => {
         const isSelected = game.state.selectedActiveItem && game.state.selectedActiveItem.id === item.id;
-
-        if (item && item.quantity > 0) {
-            DOM.inventoryGrid.innerHTML += `
-                <button onclick="window.selectInventoryItem('${item.id}')" class="group relative aspect-square bg-gray-950 hover:bg-gray-800 rounded-xl border ${isSelected ? 'border-sky-400 shadow-lg shadow-sky-500/20' : 'border-gray-800 hover:border-gray-700'} flex flex-col items-center justify-center p-1 transition cursor-pointer">
-                    <span class="text-2xl">${item.icon}</span>
-                    <span class="text-[9px] text-gray-400 group-hover:text-white mt-1">x${item.quantity}</span>
-                    <span class="pointer-events-none absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-gray-950 text-[10px] text-gray-300 px-2.5 py-1 rounded-md border border-gray-800 w-28 text-center opacity-0 group-hover:opacity-100 transition duration-150 shadow-xl z-20">${item.name}</span>
-                </button>
-            `;
-        } else {
-            DOM.inventoryGrid.innerHTML += `<div class="aspect-square bg-gray-950/40 rounded-xl border border-dashed border-gray-800/80 flex items-center justify-center text-xs text-gray-600">Vacío</div>`;
-        }
+        DOM.inventoryGrid.innerHTML += `
+            <button onclick="window.selectInventoryItem('${item.id}')" class="group relative aspect-square bg-gray-950 hover:bg-gray-800 rounded-xl border ${isSelected ? 'border-sky-400 shadow-lg shadow-sky-500/20' : 'border-gray-800 hover:border-gray-700'} flex flex-col items-center justify-center p-1 transition cursor-pointer">
+                <span class="text-2xl">${item.icon}</span>
+                <span class="text-[9px] text-gray-400 group-hover:text-white mt-1">x${item.quantity}</span>
+                <span class="pointer-events-none absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-gray-950 text-[10px] text-gray-300 px-2.5 py-1 rounded-md border border-gray-800 w-28 text-center opacity-0 group-hover:opacity-100 transition duration-150 shadow-xl z-20">${item.name}</span>
+            </button>
+        `;
+    });
+    for (let i = ownedItems.length; i < 3; i++) {
+        DOM.inventoryGrid.innerHTML += `<div class="aspect-square bg-gray-950/40 rounded-xl border border-dashed border-gray-800/80 flex items-center justify-center text-xs text-gray-600">Vacío</div>`;
     }
 }
 
@@ -149,7 +152,8 @@ export function updateLevelMapUI() {
         const timeLabel = document.createElement('div');
         timeLabel.className = 'absolute -top-5 text-[9px] font-mono text-yellow-400 font-bold whitespace-nowrap bg-gray-950/80 px-1 py-0.5 rounded border border-yellow-500/10 pointer-events-none transition-all duration-300';
         if (game.state.completedLevelTimes[i - 1]) {
-            timeLabel.innerText = game.state.completedLevelTimes[i - 1];
+            const pts = game.state.completedLevelPoints[i - 1] || 0;
+            timeLabel.innerText = `${game.state.completedLevelTimes[i - 1]} (+${pts} pts)`;
             timeLabel.style.opacity = '1';
         } else {
             timeLabel.innerText = '';
@@ -215,8 +219,19 @@ export function triggerWinLevel() {
         const mins = Math.floor(game.state.levelElapsedTime / 60).toString().padStart(2, '0');
         const secs = (game.state.levelElapsedTime % 60).toString().padStart(2, '0');
         game.state.completedLevelTimes[game.state.currentLevel - 1] = `${mins}:${secs}`;
-        updateLevelMapUI();
     }
+
+    let levelPoints = 0;
+    if (!game.state.completedLevelPoints[game.state.currentLevel - 1]) {
+        levelPoints = Math.max(50, 1000 - game.state.levelElapsedTime * 3);
+        game.state.completedLevelPoints[game.state.currentLevel - 1] = levelPoints;
+        game.state.totalScore += levelPoints;
+    } else {
+        levelPoints = game.state.completedLevelPoints[game.state.currentLevel - 1];
+    }
+
+    updateLevelMapUI();
+    updateScoreUI();
 
     const reward = 4 + game.state.currentLevel * 2;
     game.state.gold += reward;
@@ -225,19 +240,40 @@ export function triggerWinLevel() {
     DOM.gameOverlay.classList.remove('hidden');
 
     const isBossWin = (game.state.currentLevel === 5);
+    const isGameComplete = (game.state.currentLevel === 5 && game.state.currentBiomeIndex === BIOMES.length - 1);
 
-    DOM.overlayContent.innerHTML = `
-        <div class="text-yellow-400 text-5xl mb-2 animate-pulse">⭐ 👑 ⭐</div>
-        <h2 class="text-yellow-400 font-extrabold text-2xl pixel-font uppercase">${isBossWin ? '¡BIOMA DESPEJADO!' : '¡TEMPLO DESPEJADO!'}</h2>
-        <p class="text-xs text-gray-400 my-2">${isBossWin ? '¡Derrotaste al Jefe Supremo de esta región!' : '¡Desvelaste cada secreto sin dejar una sola mina!'}</p>
-        <div class="flex flex-col gap-1 w-full text-xs text-gray-400 bg-gray-900 border border-gray-800 p-3 rounded-xl my-2 text-left">
-            <div class="flex justify-between"><span>Oro de Conquista:</span> <span class="text-yellow-400 font-bold">+${reward}</span></div>
-            <div class="flex justify-between border-t border-gray-800 pt-1 mt-1"><span>Oro Total:</span> <span class="text-yellow-400 font-bold">${game.state.gold}</span></div>
-        </div>
-        <button onclick="window.advanceNextLevel()" class="mt-4 px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-black rounded-xl font-bold transition duration-200 uppercase tracking-wider shadow-lg shadow-emerald-500/30 w-full">
-            ${isBossWin ? 'Viajar al Siguiente Bioma' : `Avanzar al Nivel ${game.state.currentLevel + 1}`}
-        </button>
-    `;
+    if (isGameComplete) {
+        DOM.overlayContent.innerHTML = `
+            <div class="text-yellow-400 text-6xl mb-2 animate-bounce">🏆 👑 🏆</div>
+            <h2 class="text-yellow-400 font-black text-3xl pixel-font uppercase bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 via-amber-300 to-yellow-500">¡TEMPLO CONQUISTADO!</h2>
+            <p class="text-sm text-emerald-300 my-2 font-bold">¡Felicitaciones, ${game.frog.name}! Has superado todos los desafíos y liberado el Templo Perdido.</p>
+            <div class="flex flex-col gap-1.5 w-full text-xs text-gray-400 bg-gray-900 border border-gray-800 p-4 rounded-xl my-2 text-left shadow-lg">
+                <div class="flex justify-between"><span>Oro de Conquista:</span> <span class="text-yellow-400 font-bold">+${reward}</span></div>
+                <div class="flex justify-between border-b border-gray-800 pb-1.5"><span>Oro Total Final:</span> <span class="text-yellow-400 font-bold">${game.state.gold}</span></div>
+                <div class="flex justify-between pt-1.5"><span>Puntos del Nivel:</span> <span class="text-amber-400 font-bold">+${levelPoints} pts</span></div>
+                <div class="flex justify-between font-bold text-sm border-t border-gray-800 pt-1.5 mt-1 text-amber-300"><span>PUNTUACIÓN TOTAL:</span> <span>${game.state.totalScore} pts</span></div>
+            </div>
+            <p class="text-xs text-gray-400 my-1 font-semibold">¿Quieres volver a empezar y superar tu récord?</p>
+            <button onclick="window.restartGame()" class="mt-3 px-6 py-3 bg-amber-500 hover:bg-amber-400 text-black rounded-xl font-black transition duration-200 uppercase tracking-widest shadow-lg shadow-amber-500/30 hover:scale-[1.02] w-full">
+                Volver a Empezar la Aventura
+            </button>
+        `;
+    } else {
+        DOM.overlayContent.innerHTML = `
+            <div class="text-yellow-400 text-5xl mb-2 animate-pulse">⭐ 👑 ⭐</div>
+            <h2 class="text-yellow-400 font-extrabold text-2xl pixel-font uppercase">${isBossWin ? '¡BIOMA DESPEJADO!' : '¡TEMPLO DESPEJADO!'}</h2>
+            <p class="text-xs text-gray-400 my-2">${isBossWin ? '¡Derrotaste al Jefe Supremo de esta región!' : '¡Desvelaste cada secreto sin dejar una sola mina!'}</p>
+            <div class="flex flex-col gap-1 w-full text-xs text-gray-400 bg-gray-900 border border-gray-800 p-3 rounded-xl my-2 text-left">
+                <div class="flex justify-between"><span>Oro de Conquista:</span> <span class="text-yellow-400 font-bold">+${reward}</span></div>
+                <div class="flex justify-between border-b border-gray-800 pb-1"><span>Oro Total:</span> <span class="text-yellow-400 font-bold">${game.state.gold}</span></div>
+                <div class="flex justify-between pt-1"><span>Puntos de Nivel:</span> <span class="text-amber-400 font-bold">+${levelPoints} pts</span></div>
+                <div class="flex justify-between border-t border-gray-800 pt-1 mt-1 font-bold text-amber-300"><span>Puntos Totales:</span> <span>${game.state.totalScore} pts</span></div>
+            </div>
+            <button onclick="window.advanceNextLevel()" class="mt-4 px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-black rounded-xl font-bold transition duration-200 uppercase tracking-wider shadow-lg shadow-emerald-500/30 w-full">
+                ${isBossWin ? 'Viajar al Siguiente Bioma' : `Avanzar al Nivel ${game.state.currentLevel + 1}`}
+            </button>
+        `;
+    }
 }
 
 export function setTool(tool) {

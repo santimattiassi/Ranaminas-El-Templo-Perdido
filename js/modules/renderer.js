@@ -160,7 +160,7 @@ export function drawFrogHero(ctx, x, y, frog, time) {
         ctx.fillStyle = '#059669'; ctx.beginPath(); ctx.rect(-8, -17, 16, 5); ctx.fill();
     } else {
         ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(-5, -15, 3, 0, Math.PI * 2); ctx.arc(5, -15, 3, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#000000'; const px = frog.direction === 'left' ? -1 : (frog.direction === 'right' ? 1 : 0); ctx.arc(-5 + px, -15, 1.5, 0, Math.PI * 2); ctx.arc(5 + px, -15, 1.5, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#000000'; ctx.beginPath(); const px = frog.direction === 'left' ? -1 : (frog.direction === 'right' ? 1 : 0); ctx.arc(-5 + px, -15, 1.5, 0, Math.PI * 2); ctx.arc(5 + px, -15, 1.5, 0, Math.PI * 2); ctx.fill();
     }
 
     ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.rect(-8, -13, 16, 2.5); ctx.fill();

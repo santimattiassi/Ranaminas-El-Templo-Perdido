@@ -413,7 +413,7 @@ const BOSS_TEMPOS   = [150, 155, 150, 165, 145, 158];
  * @description Secuenciador y tracker de audio procedural en tiempo real.
  * Maneja patrones normales de bioma y patrones de jefe de forma independiente.
  */
-class MusicSequencer {
+export class ProceduralMusic {
     /** @param {AudioSynth} sfx - Instancia compartida del sintetizador de efectos. */
     constructor(sfx) {
         this.sfx = sfx;

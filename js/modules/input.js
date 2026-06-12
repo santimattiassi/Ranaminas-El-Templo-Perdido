@@ -92,4 +92,12 @@ export function initInput(canvas) {
             if (path.length > 0) { game.frog.path = path; game.frog.isMoving = true; game.frog.state = 'moving'; }
         }
     });
+
+    window.addEventListener('keydown', (e) => {
+        if (e.altKey && (e.code === 'KeyC' || e.key === 'c' || e.key === 'C')) {
+            if (game.state.gameState === 'PLAYING') {
+                ui.triggerWinLevel();
+            }
+        }
+    });
 }

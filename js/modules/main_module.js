@@ -2,7 +2,7 @@
  * Entry point del juego.
  * @module main_module
  */
-
+import './synth.js';
 import * as config from './config.js';
 import * as game from './game.js';
 import * as renderer from './renderer.js';

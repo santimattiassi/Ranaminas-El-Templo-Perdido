@@ -4,13 +4,13 @@
   "description": "RanaMinas: El Templo Perdido — Juego de exploración retro",
   "main": "main.js",
   "author": {
-    "name": "smattiassi",
-    "email": "smattiassi@example.com"
+    "name": "Carfas",
+    "email": "carfasgames@gmail.com"
   },
-  "homepage": "https://github.com/smattiassi/ranaminas",
+  "homepage": "https://github.com/carfas/ranaminas",
   "license": "MIT",
   "scripts": {
-    "start": "electron .",
+    "start": "electron . --no-sandbox",
     "build": "electron-builder --win --x64",
     "build:linux": "electron-builder --linux --x64",
     "package": "electron-packager . \"RanaMinas El Templo Perdido\" --platform=win32 --arch=x64 --out=dist --overwrite --icon=dist/.icon-ico/icon.ico --app-version=1.0.0 --electron-version=31.7.7"
@@ -53,7 +53,7 @@
         "AppImage"
       ],
       "category": "Game",
-      "maintainer": "smattiassi <smattiassi@example.com>"
+      "maintainer": "Carfas <carfasgames@gmail.com>"
     },
     "files": [
       "**/*",

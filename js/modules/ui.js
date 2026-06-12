@@ -37,6 +37,23 @@ export function initDOM() {
 
     DOM.toolExplore.addEventListener('click', () => setTool('explore'));
     DOM.toolFlag.addEventListener('click', () => setTool('flag'));
+
+    const musicVol = document.getElementById('music-volume');
+    const sfxVol = document.getElementById('sfx-volume');
+    if (musicVol) {
+        musicVol.addEventListener('input', (e) => {
+            const vol = parseInt(e.target.value) / 100;
+            document.getElementById('music-volume-text').innerText = e.target.value + '%';
+            if (audio.bgm && audio.bgm.setVolume) audio.bgm.setVolume(vol);
+        });
+    }
+    if (sfxVol) {
+        sfxVol.addEventListener('input', (e) => {
+            const vol = parseInt(e.target.value) / 100;
+            document.getElementById('sfx-volume-text').innerText = e.target.value + '%';
+            if (audio.sfx && audio.sfx.setVolume) audio.sfx.setVolume(vol);
+        });
+    }
 }
 
 export function updateProgressUI() {
@@ -244,7 +261,11 @@ export function hideOverlay() {
 
 export function confirmFrogName() {
     let chosenName = DOM.frogNameInput.value.trim();
-    if (chosenName === '') chosenName = 'Ranulfo';
+    if (chosenName === '') {
+        DOM.frogNameInput.classList.add('border-red-500');
+        setTimeout(() => DOM.frogNameInput.classList.remove('border-red-500'), 1000);
+        return; // No dejar continuar sin nombre
+    }
     game.frog.name = chosenName;
     DOM.frogNameDisplay.innerText = chosenName;
     DOM.nameModal.classList.add('hidden');
